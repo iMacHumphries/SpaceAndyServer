@@ -29,8 +29,13 @@ public class ServerView extends JFrame implements ActionListener {
 	private JTextArea logArea;
 	private JTextField commandField;
 
-	public ServerView() {
+	private ServerViewListener delegate;
+	
+	public ServerView(ServerViewListener delegate) {
 		super("Space Andy Server");
+		
+		this.delegate = delegate;
+		
 		statsArea = new JTextArea("");
 		playersArea = new JTextArea("");
 		logArea = new JTextArea("");
@@ -103,11 +108,14 @@ public class ServerView extends JFrame implements ActionListener {
 	}
 
 	private void processCommand(String command) {
-		if (command.startsWith("/")) {
+		if (command.startsWith("/") && command.length() > 2) {
 			command = command.substring(1, command.length());
 			Scanner scan = new Scanner(command);
 			CommandType cmd = CommandType.findCommandType(scan.next());
 			switch (cmd) {
+			case INVALID:
+				this.appendStringToLog("Invalid command.");
+				break;
 			case HELP:
 				this.appendStringToLog("Available Commands:");
 				this.appendStringToLog(CommandType.stringValues());
@@ -122,10 +130,23 @@ public class ServerView extends JFrame implements ActionListener {
 				});
 				timer.start();
 				break;
-			case INVALID:
-				this.appendStringToLog("Invalid command.");
+			case KILL:
+				if (scan.hasNext())
+					delegate.sendKillToClients(scan.nextLine().trim());
+				else 
+					this.appendStringToLog("Invalid use of /kill [username]");
 				break;
-			default:
+			case SAY:
+				if (scan.hasNext())
+					delegate.sendMessageToClients(scan.nextLine().trim());
+				else 
+					this.appendStringToLog("Invalid use of /say [msg]");
+				break;
+			case KICK:
+				if (scan.hasNext())
+					delegate.sendKickToClients(scan.nextLine().trim());
+				else 
+					this.appendStringToLog("Invalid use of /kick [username]");
 				break;
 			}
 			scan.close();

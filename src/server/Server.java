@@ -19,9 +19,10 @@ import server.packets.*;
 public class Server extends Thread {
 	private static final int MAX_BYTES = 1024;
 
-	private DatagramSocket socket;                     // Server socket
-	private ArrayList<ServerPlayer> connectedPlayers;  // List of server players online 
-	private ServerListener delegate;                   // Delegate work to others
+	private DatagramSocket socket; // Server socket
+	private ArrayList<ServerPlayer> connectedPlayers; // List of server players
+														// online
+	private ServerListener delegate; // Delegate work to others
 
 	/**
 	 * Constructor
@@ -52,6 +53,18 @@ public class Server extends Thread {
 		}
 	}
 
+	public void speak(String msg) {
+		Packet05Chat chatPack = new Packet05Chat("SERVER", msg);
+		byte[] data = chatPack.getData();
+		parsePacket(new DatagramPacket(data, data.length));
+	}
+
+	public void kickPlayer(String name, String reason) {
+		Packet06Kick packet = new Packet06Kick(name, reason);
+		byte[] data = packet.getData();
+		parsePacket(new DatagramPacket(data, data.length));
+	}
+	
 	/**
 	 * Parses the packets received from the run
 	 * 
@@ -70,9 +83,11 @@ public class Server extends Thread {
 			break;
 		case LOGIN:
 			Packet01Login loginPacket = new Packet01Login(data);
-			ServerPlayer player = new ServerPlayer(loginPacket.getUsername(), ip, port);
+			ServerPlayer player = new ServerPlayer(loginPacket.getUsername(),
+					ip, port);
 			this.addConnection(player, loginPacket);
 			delegate.serverDidAddPlayer(player);
+			speak("Welcome " + player.getUsername());
 			break;
 		case DISCONNECT:
 			this.removeConnection(new Packet00Disconnect(data));
@@ -92,8 +107,11 @@ public class Server extends Thread {
 			delegate.serverDidRecieveChatPacket(chatPacket);
 			this.sendDataToAllClients(data);
 			break;
-		default:
-			System.out.println("Error invalid packet!");
+		case KICK:
+			Packet06Kick kickPacket = new Packet06Kick(data);
+			ServerPlayer playerToKick = serverPlayerWithName(kickPacket.getUsername());
+			removeConnection(new Packet00Disconnect(kickPacket.getUsername()));
+			sendData(kickPacket.getData(), playerToKick.getIp(), playerToKick.getPort());
 			break;
 		}
 	}
@@ -101,7 +119,8 @@ public class Server extends Thread {
 	public void handleMovePacket(Packet02Move movePacket) {
 		for (ServerPlayer player : this.connectedPlayers) {
 			if (!player.getUsername().equals(movePacket.getUsername())) {
-				this.sendData(movePacket.getData(), player.getIp(), player.getPort());
+				this.sendData(movePacket.getData(), player.getIp(),
+						player.getPort());
 			} else {
 				player.setX(movePacket.getX());
 				player.setY(movePacket.getY());
@@ -151,7 +170,7 @@ public class Server extends Thread {
 		player.setX(loginPacket.getX());
 		player.setY(loginPacket.getY());
 		player.setRotZ(loginPacket.getRotZ());
-		
+
 		// Go through all players
 		for (ServerPlayer p : connectedPlayers) {
 			// Check if they have connected before
@@ -169,7 +188,8 @@ public class Server extends Thread {
 				sendData(loginPacket.getData(), p.getIp(), p.getPort());
 
 				// Sending every already connected player to the new player
-				Packet01Login lp = new Packet01Login(p.getUsername(),p.getX(),p.getY(),p.getRotZ());
+				Packet01Login lp = new Packet01Login(p.getUsername(), p.getX(),
+						p.getY(), p.getRotZ());
 				sendData(lp.getData(), player.getIp(), player.getPort());
 			}
 		} // End of for loop.
@@ -183,7 +203,8 @@ public class Server extends Thread {
 		// Search for the disconnecting player
 		ServerPlayer disconnectingPlayer = null;
 		for (ServerPlayer p : this.connectedPlayers)
-			if (p.getUsername().equals(disconnectPacket.getUsername()))
+			if (p.getUsername()
+					.equalsIgnoreCase(disconnectPacket.getUsername()))
 				disconnectingPlayer = p;
 
 		// Remove the player from connected players
@@ -191,12 +212,35 @@ public class Server extends Thread {
 			this.connectedPlayers.remove(disconnectingPlayer);
 			delegate.serverDidRemovePlayer(disconnectingPlayer);
 		}
+
 		// Send the disconnect to every client
 		this.sendDataToAllClients(disconnectPacket.getData());
 	}
 
 	public ArrayList<ServerPlayer> getPlayers() {
 		return this.connectedPlayers;
+	}
+
+	public ServerPlayer serverPlayerWithName(String name) {
+		ServerPlayer result = null;
+		for (ServerPlayer player : connectedPlayers) {
+			if (player.getUsername().equalsIgnoreCase(name)) {
+				result = player;
+				break;
+			}
+		}
+		return result;
+	}
+	
+	public boolean isPlayerOnline(String name) {
+		boolean result = false;
+		for (ServerPlayer player : connectedPlayers) {
+			if (player.getUsername().equalsIgnoreCase(name)) {
+				result = true;
+				break;
+			}
+		}
+		return result;
 	}
 
 }

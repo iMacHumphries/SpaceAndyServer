@@ -3,7 +3,9 @@ public enum CommandType {
 	INVALID(""),
 	HELP ("help"),
 	STOP ("stop"),
-	KILL ("kill");
+	KILL ("kill"),
+	SAY("say"),
+	KICK("kick");
 	
 	private String cmd;
 	private CommandType(String cmd) {
