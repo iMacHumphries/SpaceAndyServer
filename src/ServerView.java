@@ -92,7 +92,11 @@ public class ServerView extends JFrame implements ActionListener {
 	}
 
 	public void appendStringToLog(String msg) {
-		logArea.append("> " + msg + "\n");
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				logArea.append("> " + msg + "\n");
+			}
+		});
 	}
 	
 	public void displayPlayers(ArrayList<ServerPlayer> players) {
@@ -114,14 +118,15 @@ public class ServerView extends JFrame implements ActionListener {
 			CommandType cmd = CommandType.findCommandType(scan.next());
 			switch (cmd) {
 			case INVALID:
-				this.appendStringToLog("Invalid command.");
+				appendStringToLog("Invalid command.");
 				break;
 			case HELP:
-				this.appendStringToLog("Available Commands:");
-				this.appendStringToLog(CommandType.stringValues());
+				appendStringToLog("Available Commands:");
+				appendStringToLog(CommandType.stringValues());
 				break;
 			case STOP:
-				this.appendStringToLog("Shutting down Server...");
+				appendStringToLog("Shutting down Server...");
+				delegate.sendStopServer();
 				Timer timer = new Timer(2_000, new ActionListener(){
 					@Override
 					public void actionPerformed(ActionEvent e) {
@@ -143,10 +148,16 @@ public class ServerView extends JFrame implements ActionListener {
 					this.appendStringToLog("Invalid use of /say [msg]");
 				break;
 			case KICK:
-				if (scan.hasNext())
-					delegate.sendKickToClients(scan.nextLine().trim());
-				else 
-					this.appendStringToLog("Invalid use of /kick [username]");
+				if (scan.hasNext()) {
+					String username = scan.next().trim();
+					String reason = "no reason";
+					if (scan.hasNext())
+						 reason = scan.nextLine().trim();
+					delegate.sendKickToClients(username, reason);
+				}
+				else {
+					this.appendStringToLog("Invalid use of /kick [username] ([reason])");
+				}
 				break;
 			}
 			scan.close();

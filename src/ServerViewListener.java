@@ -4,5 +4,7 @@ public interface ServerViewListener {
 	
 	void sendKillToClients(String username);
 	
-	void sendKickToClients(String username);
+	void sendKickToClients(String username, String reason);
+	
+	void sendStopServer();
 }

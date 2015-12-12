@@ -8,8 +8,9 @@ public class ServerController implements ServerListener, ServerViewListener {
 	private Server server;
 
 	public ServerController() {
-		server = new Server(this);
 		view = new ServerView(this);
+		server = new Server(this);
+		
 	}
 	
 	public void start() {
@@ -25,7 +26,6 @@ public class ServerController implements ServerListener, ServerViewListener {
 	@Override
 	public void serverAlreadyRunning() {
 		view.appendStringToLog("[ERROR] Server is alreay running on this ip.");
-		
 	}
 
 	@Override
@@ -59,12 +59,17 @@ public class ServerController implements ServerListener, ServerViewListener {
 	}
 
 	@Override
-	public void sendKickToClients(String username) {
+	public void sendKickToClients(String username, String reason) {
 		if (server.isPlayerOnline(username)) {
-			view.appendStringToLog("Kicking " + username + " ...");
-			server.kickPlayer(username, "no reason");
+			view.appendStringToLog("Kicking " + username + " for " + reason);
+			server.kickPlayer(username, reason);
 		} else {
 			view.appendStringToLog(username + " is not online.");
 		}
+	}
+
+	@Override
+	public void sendStopServer() {
+		server.shutDown();
 	}
 }
