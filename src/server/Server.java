@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 
+import constants.Constants;
 import server.packets.*;
 
 /**
@@ -16,12 +17,11 @@ import server.packets.*;
  * @version 25-NOV-2015
  */
 public class Server extends Thread {
-	private static final int PORT_NUMBER = 25565;
 	private static final int MAX_BYTES = 1024;
 
-	private DatagramSocket socket;
-	private ArrayList<ServerPlayer> connectedPlayers;
-	private ServerListener delegate;
+	private DatagramSocket socket;                     // Server socket
+	private ArrayList<ServerPlayer> connectedPlayers;  // List of server players online 
+	private ServerListener delegate;                   // Delegate work to others
 
 	/**
 	 * Constructor
@@ -30,7 +30,7 @@ public class Server extends Thread {
 		this.delegate = listener;
 		connectedPlayers = new ArrayList<>();
 		try {
-			this.socket = new DatagramSocket(PORT_NUMBER);
+			this.socket = new DatagramSocket(Constants.PORT_NUMBER);
 		} catch (SocketException e) {
 			delegate.serverAlreadyRunning();
 		}
@@ -84,6 +84,12 @@ public class Server extends Thread {
 			this.sendDataToAllClients(data);
 			break;
 		case KILL:
+			Packet04Kill kp = new Packet04Kill(data);
+			this.sendDataToAllClients(kp.getData());
+			break;
+		case CHAT:
+			Packet05Chat chatPacket = new Packet05Chat(data);
+			delegate.serverDidRecieveChatPacket(chatPacket);
 			this.sendDataToAllClients(data);
 			break;
 		default:

@@ -1,5 +1,7 @@
 package server;
 
+import server.packets.Packet05Chat;
+
 public interface ServerListener {
 	/**
 	 * Called when the server receives a login packet.
@@ -21,4 +23,11 @@ public interface ServerListener {
 	 * @param player
 	 */
 	void serverDidRemovePlayer(ServerPlayer player);
+	
+	/**
+	 * Called when a player sends a message.
+	 * 
+	 * @param chatPacket
+	 */
+	void serverDidRecieveChatPacket(Packet05Chat chatPacket);
 }

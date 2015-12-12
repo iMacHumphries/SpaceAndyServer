@@ -2,6 +2,7 @@ import server.Server;
 import server.ServerListener;
 import server.ServerPlayer;
 import server.packets.Packet;
+import server.packets.Packet05Chat;
 
 public class ServerController implements ServerListener{
 	private ServerView view;
@@ -38,6 +39,11 @@ public class ServerController implements ServerListener{
 	public void serverDidRemovePlayer(ServerPlayer player) {
 		view.appendStringToLog(player.getUsername() + " has disconnected.");
 		view.displayPlayers(server.getPlayers());
+	}
+
+	@Override
+	public void serverDidRecieveChatPacket(Packet05Chat chatPacket) {
+		view.appendStringToLog("[" + chatPacket.getUsername() + "] " + chatPacket.getMessage());
 	}
 
 }
