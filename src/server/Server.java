@@ -21,9 +21,9 @@ import server.packets.*;
 public class Server extends Thread {
 	private static final int MAX_BYTES = 1024;
 
-	private DatagramSocket socket; // Server socket
-	private ArrayList<ServerPlayer> connectedPlayers; // List of server players
-														// online
+	private DatagramSocket socket;                    // Server socket
+	private ArrayList<ServerPlayer> connectedPlayers; // List of server players online
+	
 	private ServerListener delegate; // Delegate work to others
 
 	/**
